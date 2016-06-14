@@ -5,13 +5,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"runtime"
 
 	"github.com/go-errors/errors"
-	"github.com/layeh/gopher-luar"
 	"github.com/mattn/go-isatty"
 	"github.com/mitchellh/go-homedir"
-	"github.com/yuin/gopher-lua"
 	"github.com/zyedidia/tcell"
 	"github.com/zyedidia/tcell/encoding"
 )
@@ -42,10 +39,6 @@ var (
 	// Version is the version number or commit hash
 	// This should be set by the linker
 	Version = "Unknown"
-
-	// L is the lua state
-	// This is the VM that runs the plugins
-	L *lua.LState
 
 	// The list of views
 	tabs []*Tab
@@ -187,9 +180,6 @@ func main() {
 		os.Exit(0)
 	}
 
-	L = lua.NewState()
-	defer L.Close()
-
 	// Some encoding stuff in case the user isn't using UTF-8
 	encoding.Register()
 	tcell.SetEncodingFallback(tcell.EncodingFallbackASCII)
@@ -235,17 +225,7 @@ func main() {
 		}
 	}
 
-	L.SetGlobal("OS", luar.New(L, runtime.GOOS))
-	L.SetGlobal("tabs", luar.New(L, tabs))
-	L.SetGlobal("curTab", luar.New(L, curTab))
-	L.SetGlobal("messenger", luar.New(L, messenger))
-	L.SetGlobal("GetOption", luar.New(L, GetOption))
-	L.SetGlobal("AddOption", luar.New(L, AddOption))
-	L.SetGlobal("BindKey", luar.New(L, BindKey))
-	L.SetGlobal("MakeCommand", luar.New(L, MakeCommand))
-	L.SetGlobal("CurView", luar.New(L, CurView))
-
-	LoadPlugins()
+	InitLua()
 
 	for {
 		// Display everything
